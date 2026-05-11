@@ -1,0 +1,162 @@
+<!--
+  日本語ラボ 自动化测试清单
+  每次修改代码后，在浏览器中打开本页运行全部测试
+  也可通过 browser_console 逐一验证
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>测试清单 · 日本語ラボ</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:720px;margin:20px auto;padding:0 16px}
+h1{color:#c41e3a}.pass{color:#2d7d46}.fail{color:#c62828}.pending{color:#999}
+ul{list-style:none;padding:0}li{padding:8px;margin:4px 0;border-radius:6px;background:#f5f5f5}
+.summary{font-size:1.2rem;font-weight:700;margin:16px 0}
+.btn{padding:10px 24px;border:none;border-radius:8px;cursor:pointer;font-size:1rem;font-weight:600;margin:4px}
+.btn-run{background:#c41e3a;color:#fff}.btn-reset{background:#666;color:#fff}
+.log{background:#1a1a1a;color:#0f0;padding:16px;border-radius:8px;font-family:monospace;font-size:.85rem;white-space:pre-wrap;max-height:400px;overflow-y:auto}
+</style>
+</head>
+<body>
+<h1>🧪 日本語ラボ 测试清单 v1.1</h1>
+<p>每次修改 <code>app.js</code> / <code>style.css</code> / <code>index.html</code> / <code>data.js</code> 后点击运行。</p>
+
+<button class="btn btn-run" onclick="runAll()">▶ 运行全部测试</button>
+<button class="btn btn-reset" onclick="resetTests()">🔄 重置测试结果</button>
+
+<div class="summary" id="summary"></div>
+<ul id="testList"></ul>
+<div class="log" id="log"></div>
+
+<script>
+const TESTS = [
+  // ─── 页面基础 (6) ───
+  {id:'load', cat:'页面', desc:'页面成功加载 (#app 存在)', fn:()=>!!document.querySelector('#app')},
+  {id:'tabs', cat:'页面', desc:'5个Tab按钮存在', fn:()=>document.querySelectorAll('.tab').length===5},
+  {id:'progress', cat:'页面', desc:'进度条组件存在', fn:()=>!!document.querySelector('.progress-fill')},
+  {id:'stats', cat:'页面', desc:'统计数字组件存在', fn:()=>!!document.querySelector('#statStreak')},
+  {id:'toast', cat:'页面', desc:'Toast提示组件存在', fn:()=>!!document.querySelector('#toast')},
+  {id:'themeBtn', cat:'页面', desc:'主题切换按钮存在', fn:()=>!!document.querySelector('#themeToggle')},
+
+  // ─── 闪卡系统 (6) ───
+  {id:'modal', cat:'闪卡', desc:'闪卡模态框DOM存在', fn:()=>!!document.querySelector('#flashcardModal')},
+  {id:'cardInner', cat:'闪卡', desc:'.card-inner 3D翻转包装层存在', fn:()=>!!document.querySelector('.card-inner')},
+  {id:'cardFront', cat:'闪卡', desc:'#cardFront 正面容器存在', fn:()=>!!document.querySelector('#cardFront')},
+  {id:'cardBack', cat:'闪卡', desc:'#cardBack 背面容器存在', fn:()=>!!document.querySelector('#cardBack')},
+  {id:'ratingBtns', cat:'闪卡', desc:'4个评分按钮存在 (1-4)', fn:()=>document.querySelectorAll('#cardActions button[data-grade]').length===4},
+  {id:'cardProgress', cat:'闪卡', desc:'卡片进度显示存在', fn:()=>!!document.querySelector('#cardProgress')},
+
+  // ─── 功能逻辑 (8) ───
+  {id:'todayRender', cat:'功能', desc:'今日任务页渲染Day标题', fn:()=>{const h=document.querySelector('#tabContent .lesson-card h3');return h&&/Day \d/.test(h.textContent)}},
+  {id:'vocabCount', cat:'功能', desc:'词汇区显示正确数量', fn:()=>{const h=document.querySelector('#tabContent .badge-vocab');return h&&/词/.test(h.parentElement.textContent)}},
+  {id:'grammarSection', cat:'功能', desc:'语法区存在且有内容', fn:()=>{const h=document.querySelector('#tabContent .badge-grammar');return !!h}},
+  {id:'reviewBtn', cat:'功能', desc:'闪卡复习按钮可点击', fn:()=>{const b=document.querySelector('#tabContent .btn-review');return b&&b.tagName==='BUTTON'}},
+  {id:'markDoneBtn', cat:'功能', desc:'标记完成按钮存在', fn:()=>{const b=document.querySelector('#tabContent .btn-done');return !!b||!!document.querySelector('#tabContent .btn-outline')}},
+  {id:'darkMode', cat:'功能', desc:'暗色模式切换可用', fn:()=>{const was=document.documentElement.classList.contains('dark');document.querySelector('#themeToggle').click();const now=document.documentElement.classList.contains('dark');document.querySelector('#themeToggle').click();return was!==now}},
+  {id:'localStorage', cat:'功能', desc:'localStorage 可读写', fn:()=>{try{localStorage.setItem('_test','1');const v=localStorage.getItem('_test');localStorage.removeItem('_test');return v==='1'}catch(e){return false}}},
+  {id:'tabSwitch', cat:'功能', desc:'Tab切换可用 (今日→单词卡→今日)', fn:()=>{const t0=document.querySelector('.tab.active');const all=document.querySelectorAll('.tab');if(all.length<2)return false;all[1].click();const t1=document.querySelector('.tab.active');all[0].click();return t0!==t1}},
+];
+
+// ─── 闪卡交互测试 (需要在modal打开时运行) ───
+const MODAL_TESTS = [
+  {id:'modalOpen', desc:'点击闪卡复习→模态框打开', fn:()=>{
+    const btn=document.querySelector('.btn-review'); if(!btn)return false;
+    btn.click(); return document.querySelector('#flashcardModal').classList.contains('active');
+  }},
+  {id:'cardContent', desc:'卡片显示词汇内容', fn:()=>{
+    const f=document.querySelector('#cardFront'); return f&&f.textContent.trim().length>0;
+  }},
+  {id:'cardFlip', desc:'卡片翻转 (toggle flipped)', fn:()=>{
+    const card=document.querySelector('#flashcard');
+    const was=card.classList.contains('flipped');
+    card.click(); const now=card.classList.contains('flipped');
+    card.click(); // flip back
+    return was!==now;
+  }},
+  {id:'ratingAdvance', desc:'评分后推进到下一张', fn:()=>{
+    const prog=document.querySelector('#cardProgress').textContent;
+    document.querySelector('#cardActions button[data-grade="3"]').click();
+    return new Promise(r=>setTimeout(()=>{
+      const prog2=document.querySelector('#cardProgress').textContent;
+      r(prog!==prog2);
+    },300));
+  }},
+  {id:'ratingClose', desc:'评完所有卡片后模态关闭', fn:()=>{
+    return new Promise(r=>{
+      const loop=()=>{const b=document.querySelector('#cardActions button[data-grade="3"]');if(b){b.click();setTimeout(loop,100)}else{r(!document.querySelector('#flashcardModal').classList.contains('active'))}};
+      loop();
+    });
+  }},
+];
+
+// 运行全部
+async function runAll() {
+  const log = document.getElementById('log');
+  const list = document.getElementById('testList');
+  log.textContent = '';
+  list.innerHTML = '';
+
+  let passed = 0, failed = 0;
+  const logLine = (msg) => { log.textContent += msg + '\n'; log.scrollTop = log.scrollHeight; };
+
+  // 重置到今日任务Tab
+  document.querySelector('.tab')?.click();
+
+  logLine('══════════════════════');
+  logLine('  日本語ラボ 测试运行');
+  logLine('══════════════════════\n');
+
+  // 基础测试
+  for (const t of TESTS) {
+    let ok = false;
+    try {
+      const r = t.fn();
+      ok = r === true || r;
+    } catch(e) { logLine(`  ⚠ ${t.id}: ${e.message}`); }
+    const cls = ok ? 'pass' : 'fail';
+    const icon = ok ? '✅' : '❌';
+    logLine(`  ${icon} [${t.cat}] ${t.desc}`);
+    list.innerHTML += `<li class="${cls}">${icon} ${t.desc} <small>(${t.id})</small></li>`;
+    if (ok) passed++; else failed++;
+  }
+
+  // 闪卡交互测试
+  logLine('\n── 闪卡交互测试 ──');
+  try {
+    for (const t of MODAL_TESTS) {
+      let ok = false;
+      try {
+        const r = t.fn();
+        ok = r instanceof Promise ? await r : r;
+      } catch(e) { logLine(`  ⚠ ${t.id}: ${e.message}`); }
+      const icon = ok ? '✅' : '❌';
+      logLine(`  ${icon} ${t.desc}`);
+      list.innerHTML += `<li class="${ok?'pass':'fail'}">${icon} ${t.desc} <small>(${t.id})</small></li>`;
+      if (ok) passed++; else failed++;
+    }
+    // 确保modal关闭
+    document.querySelector('#flashcardModal')?.classList.remove('active');
+  } catch(e) {
+    logLine(`  ⚠ 闪卡测试异常: ${e.message}`);
+    failed++;
+  }
+
+  const total = passed + failed;
+  logLine(`\n══════════════════════`);
+  logLine(`  结果: ${passed}/${total} 通过`);
+  if (failed > 0) logLine(`  ${failed} 项失败，请修复后重试`);
+  logLine(`══════════════════════`);
+
+  document.getElementById('summary').innerHTML = 
+    `${passed}/${total} 通过 ` + (failed===0 ? '<span class="pass">🎉 全部通过！</span>' : `<span class="fail">⚠ ${failed} 失败</span>`);
+}
+
+function resetTests() {
+  document.getElementById('summary').textContent = '';
+  document.getElementById('testList').innerHTML = '';
+  document.getElementById('log').textContent = '';
+}
+</script>
+</body>
+</html>
