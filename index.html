@@ -52,11 +52,13 @@
 <div class="modal" id="flashcardModal">
   <div class="modal-backdrop"></div>
   <div class="modal-card" id="flashcard">
-    <div class="card-front" id="cardFront"></div>
-    <div class="card-back" id="cardBack"></div>
-    <div class="card-hint" id="cardHint">点击翻转 | Click to flip</div>
+    <div class="card-inner">
+      <div class="card-front" id="cardFront"></div>
+      <div class="card-back" id="cardBack"></div>
+    </div>
   </div>
-  <div class="card-actions">
+  <div class="card-hint" id="cardHint">🖱 点击翻卡 | 按键 1-4 评分 | Esc 关闭</div>
+  <div class="card-actions" id="cardActions">
     <button class="btn-again" data-grade="1">😰 再来</button>
     <button class="btn-hard" data-grade="2">🤔 困难</button>
     <button class="btn-good" data-grade="3">😊 良好</button>
