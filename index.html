@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>日本語ラボ - 日语学习平台</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇯🇵</text></svg>">
+</head>
+<body>
+<div id="app">
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <h1>日本語ラボ</h1>
+    <span class="subtitle">从零到自由行 · 每日学习系统</span>
+  </div>
+  <div class="header-actions">
+    <button id="themeToggle" title="切换主题">🌓</button>
+    <button id="resetBtn" title="重置进度">🔄</button>
+  </div>
+</header>
+
+<!-- PROGRESS BAR -->
+<section class="progress-section">
+  <div class="progress-header">
+    <span>📊 今日进度</span>
+    <span id="progressText">0/5 完成</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="stats-row">
+    <div class="stat"><span class="stat-num" id="statStreak">0</span><span class="stat-label">连续天数</span></div>
+    <div class="stat"><span class="stat-num" id="statWords">0</span><span class="stat-label">累计词汇</span></div>
+    <div class="stat"><span class="stat-num" id="statKanji">0</span><span class="stat-label">累计汉字</span></div>
+  </div>
+</section>
+
+<!-- TAB NAV -->
+<nav class="tabs" id="tabNav">
+  <button class="tab active" data-tab="today">📅 今日任务</button>
+  <button class="tab" data-tab="vocab">📝 单词卡</button>
+  <button class="tab" data-tab="grammar">📖 语法</button>
+  <button class="tab" data-tab="kanji">🈶 汉字</button>
+  <button class="tab" data-tab="roadmap">🗺️ 路线图</button>
+</nav>
+
+<!-- TAB CONTENT -->
+<main id="tabContent"></main>
+
+<!-- FLASHCARD MODAL -->
+<div class="modal" id="flashcardModal">
+  <div class="modal-backdrop"></div>
+  <div class="modal-card" id="flashcard">
+    <div class="card-front" id="cardFront"></div>
+    <div class="card-back" id="cardBack"></div>
+    <div class="card-hint" id="cardHint">点击翻转 | Click to flip</div>
+  </div>
+  <div class="card-actions">
+    <button class="btn-again" data-grade="1">😰 再来</button>
+    <button class="btn-hard" data-grade="2">🤔 困难</button>
+    <button class="btn-good" data-grade="3">😊 良好</button>
+    <button class="btn-easy" data-grade="4">🚀 简单</button>
+  </div>
+  <div class="card-progress" id="cardProgress"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
